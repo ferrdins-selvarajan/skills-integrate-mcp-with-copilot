@@ -13,6 +13,26 @@
     </header>
 
     <main>
+      <section id="auth-container" class="auth-section">
+        <h3>Account</h3>
+        <form id="login-form">
+          <div class="form-group">
+            <label for="username">Username:</label>
+            <input type="text" id="username" name="username" autocomplete="username" required />
+          </div>
+          <div class="form-group">
+            <label for="password">Password:</label>
+            <input type="password" id="password" name="password" autocomplete="current-password" required />
+          </div>
+          <button type="submit">Sign in</button>
+        </form>
+        <div id="signed-in-status" class="hidden">
+          <p>Signed in as <strong id="signed-in-user"></strong> (<span id="signed-in-role"></span>)</p>
+          <button id="logout-button" type="button">Sign out</button>
+        </div>
+        <div id="auth-message" class="hidden"></div>
+      </section>
+
       <section id="activities-container">
         <h3>Available Activities</h3>
         <div id="activities-list">
@@ -21,7 +41,7 @@
         </div>
       </section>
 
-      <section id="signup-container">
+      <section id="signup-container" class="hidden">
         <h3>Sign Up for an Activity</h3>
         <form id="signup-form">
           <div class="form-group">

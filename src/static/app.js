@@ -3,6 +3,78 @@ document.addEventListener("DOMContentLoaded", () => {
   const activitySelect = document.getElementById("activity");
   const signupForm = document.getElementById("signup-form");
   const messageDiv = document.getElementById("message");
+  const loginForm = document.getElementById("login-form");
+  const authMessage = document.getElementById("auth-message");
+  const signedInStatus = document.getElementById("signed-in-status");
+  const signedInUser = document.getElementById("signed-in-user");
+  const signedInRole = document.getElementById("signed-in-role");
+  const logoutButton = document.getElementById("logout-button");
+  const signupContainer = document.getElementById("signup-container");
+  let currentUser = null;
+
+  function updateAuthView(user) {
+    currentUser = user;
+    loginForm.classList.toggle("hidden", Boolean(user));
+    signedInStatus.classList.toggle("hidden", !user);
+    signupContainer.classList.toggle("hidden", user?.role !== "admin");
+    if (user) {
+      signedInUser.textContent = user.username;
+      signedInRole.textContent = user.role;
+    }
+  }
+
+  function showAuthMessage(message, type) {
+    authMessage.textContent = message;
+    authMessage.className = type;
+  }
+
+  loginForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const username = document.getElementById("username").value;
+    const password = document.getElementById("password").value;
+
+    try {
+      const response = await fetch("/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, password }),
+      });
+      const result = await response.json();
+      if (!response.ok) {
+        showAuthMessage(result.detail || "Unable to sign in", "error");
+        return;
+      }
+      updateAuthView(result.user);
+      loginForm.reset();
+      authMessage.className = "hidden";
+      await fetchActivities();
+    } catch (error) {
+      showAuthMessage("Unable to sign in. Please try again.", "error");
+      console.error("Error signing in:", error);
+    }
+  });
+
+  logoutButton.addEventListener("click", async () => {
+    try {
+      await fetch("/auth/logout", { method: "POST" });
+      updateAuthView(null);
+      await fetchActivities();
+    } catch (error) {
+      showAuthMessage("Unable to sign out. Please try again.", "error");
+      console.error("Error signing out:", error);
+    }
+  });
+
+  async function loadCurrentUser() {
+    try {
+      const response = await fetch("/auth/me");
+      const result = await response.json();
+      updateAuthView(result.user);
+    } catch (error) {
+      updateAuthView(null);
+      console.error("Error checking session:", error);
+    }
+  }
 
   // Function to fetch activities from API
   async function fetchActivities() {
@@ -12,6 +84,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
       // Clear loading message
       activitiesList.innerHTML = "";
+      while (activitySelect.options.length > 1) {
+        activitySelect.remove(1);
+      }
 
       // Populate activities list
       Object.entries(activities).forEach(([name, details]) => {
@@ -23,7 +98,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         // Create participants HTML with delete icons instead of bullet points
         const participantsHTML =
-          details.participants.length > 0
+          currentUser?.role === "admin" && details.participants.length > 0
             ? `<div class="participants-section">
               <h5>Participants:</h5>
               <ul class="participants-list">
@@ -35,7 +110,11 @@ document.addEventListener("DOMContentLoaded", () => {
                   .join("")}
               </ul>
             </div>`
-            : `<p><em>No participants yet</em></p>`;
+            : `<p><em>${
+                details.participant_count === 0
+                  ? "No participants yet"
+                  : `${details.participant_count} students registered`
+              }</em></p>`;
 
         activityCard.innerHTML = `
           <h4>${name}</h4>
@@ -56,7 +135,7 @@ document.addEventListener("DOMContentLoaded", () => {
         activitySelect.appendChild(option);
       });
 
-      // Add event listeners to delete buttons
+      // Add event listeners to admin-only delete buttons
       document.querySelectorAll(".delete-btn").forEach((button) => {
         button.addEventListener("click", handleUnregister);
       });
@@ -155,6 +234,6 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  // Initialize app
-  fetchActivities();
+  // Restore the server-backed session before rendering role-specific actions.
+  loadCurrentUser().then(fetchActivities);
 });

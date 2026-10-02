@@ -149,6 +149,16 @@ section h3 {
   font-size: 16px;
 }
 
+#auth-message {
+  margin-top: 12px;
+  padding: 10px;
+  border-radius: 4px;
+}
+
+#signed-in-status p {
+  margin-bottom: 12px;
+}
+
 button {
   background-color: #1a237e;
   color: white;

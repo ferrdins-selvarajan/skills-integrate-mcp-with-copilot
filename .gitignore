@@ -38,6 +38,7 @@ Thumbs.db
 
 # Python files
 __pycache__
+src/users.json
 
 # Env files
 .env
